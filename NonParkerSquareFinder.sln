@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31112.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonParkerSquareFinder", "NonParkerSquareFinder.csproj", "{17002ABD-03A8-460D-8050-53D853EA92E8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{17002ABD-03A8-460D-8050-53D853EA92E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17002ABD-03A8-460D-8050-53D853EA92E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17002ABD-03A8-460D-8050-53D853EA92E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17002ABD-03A8-460D-8050-53D853EA92E8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6E5E4DBE-B288-4501-8453-1DF9516F8F03}
+	EndGlobalSection
+EndGlobal
