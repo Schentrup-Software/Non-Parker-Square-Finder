@@ -21,13 +21,13 @@ namespace Program
 
             var searchSpace = new List<long>();
 
-            double lastNumber = 4;
-            int counter = 3;
+            long lastNumber = 4;
+            long counter = 3;
            
             while (lastNumber < totalSearchSpace)
             {
-                searchSpace.Add((long)lastNumber);
-                lastNumber = Math.Pow(counter++, 2);
+                searchSpace.Add(lastNumber);
+                lastNumber = counter * counter++;
             }
 
             File.Delete(mfilePath);
@@ -74,7 +74,6 @@ namespace Program
             const string filePath = "./xyfile.txt";
 
             var newSearchSpace = new List<(long, long)>();
-            var searchSpaceDictionary = searchSpace.ToDictionary(x => x);
 
             var searchSpacePairs = searchSpace
                 .GetAllPairs();
@@ -109,7 +108,7 @@ namespace Program
                 {
                     newSearchSpace.Add((m, x));
                 }
-            };
+            }
 
             File.Delete(filePath);
             await File.AppendAllLinesAsync(filePath, newSearchSpace.Select(x => $"{x.Item1},{x.Item2}").Prepend(searchSpace.Max().ToString()));        
