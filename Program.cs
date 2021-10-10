@@ -12,41 +12,30 @@ namespace Program
     {
 
         const string mfilePath = "./mfile.txt";
-        const uint totalSearchSpace = int.MaxValue / 100;
+        const uint totalSearchSpace = uint.MaxValue;
 
         public static async Task Main()
         {
             var sw = new Stopwatch();
             sw.Start();
 
-            var searchSpace = new ConcurrentBag<uint>();
+            var searchSpace = new List<uint>();
 
             double lastNumber = 4;
             int counter = 3;
-
-            var mfile = File.Exists(mfilePath) ? await File.ReadAllLinesAsync(mfilePath) : Array.Empty<string>();
-            var mtotalParses = int.TryParse(mfile.FirstOrDefault(), out var mtotal);
-            var mSearchSpaceSame = mtotalParses && mtotal == totalSearchSpace;
-
-            if (mSearchSpaceSame)
+           
+            while (lastNumber < totalSearchSpace)
             {
-                searchSpace = new ConcurrentBag<uint>(mfile.Skip(1).Select(x => uint.Parse(x)));
+                searchSpace.Add((uint)lastNumber);
+                lastNumber = Math.Pow(counter++, 2);
             }
-            else
-            {
-                while (lastNumber < totalSearchSpace)
-                {
-                    searchSpace.Add((uint)lastNumber);
-                    lastNumber = Math.Pow(counter++, 2);
-                }
 
-                File.Delete(mfilePath);
-                await File.AppendAllLinesAsync(mfilePath, searchSpace.Prepend(totalSearchSpace).Select(x => x.ToString()));
-            }
+            File.Delete(mfilePath);
+            await File.AppendAllLinesAsync(mfilePath, searchSpace.Prepend(totalSearchSpace).Select(x => x.ToString()));
 
             Console.WriteLine(searchSpace.Count);
 
-            var newSearchSpace = (await PullFromCache(searchSpace))
+            var newSearchSpace = (await PullFromCache(searchSpace, totalSearchSpace))
                 .GroupBy(x => x.Item1, x => x.Item2)
                 .Where(x => x.Count() > 1);
 
@@ -58,9 +47,9 @@ namespace Program
 
                 foreach(var pairs in pairedGroups)
                 {
-                    var x = pairs.Item1;
-                    var y = pairs.Item2;
-                    var m = group.Key;
+                    long x = pairs.Item1;
+                    long y = pairs.Item2;
+                    long m = group.Key;
 
                     if (
                         Math.Sqrt(m + (x + y)) % 1 == 0 &&
@@ -80,49 +69,47 @@ namespace Program
             Console.WriteLine($"None found. Time {sw.Elapsed.Minutes} min. {sw.Elapsed.Seconds} sec.");
         }
 
-        private static async Task<ConcurrentBag<(uint, uint)>> PullFromCache(ConcurrentBag<uint> searchSpace)
+        private static async Task<List<(uint, uint)>> PullFromCache(List<uint> searchSpace, uint maxM)
         {
             const string filePath = "./xyfile.txt";
 
-            var xfile = File.Exists(filePath) ? await File.ReadAllLinesAsync(filePath) : Array.Empty<string>();
-            var highestMExists = int.TryParse(xfile.FirstOrDefault(), out var highestM);
+            var newSearchSpace = new List<(uint, uint)>();
+            var searchSpaceDictionary = searchSpace.ToDictionary(x => x);
 
-            var newSearchSpace = highestMExists ? new ConcurrentBag<(uint, uint)>(xfile.Skip(1).Select(x =>
+            var searchSpacePairs = searchSpace
+                .GetAllPairs();
+
+            foreach (var pair in searchSpacePairs)
             {
-                var split = x.Split(',').Select(y => uint.Parse(y));
-                return (split.First(), split.Last());
-            })) : new ConcurrentBag<(uint, uint)>();
-            
-            var searchSpaceTasks = searchSpace
-                .Where(m => m > highestM)
-                .Select(m => Task.Run(() =>
-                {                     
-                    for(uint x = 1; x < m; x++)
-                    {
-                        var mPlusX = m + x;
-                        var mPlusXLastDigit = mPlusX % 10;
+                uint m;
+                uint mPlusX;
 
-                        if (mPlusXLastDigit == 2 || mPlusXLastDigit == 3 || mPlusXLastDigit == 7 || mPlusXLastDigit == 8)
-                        {
-                            continue;
-                        }
+                if (pair.Item1 < pair.Item2) 
+                {
+                    m = pair.Item1;
+                    mPlusX = pair.Item2;
+                }
+                else
+                {
+                    mPlusX = pair.Item1;
+                    m = pair.Item2;
+                }
 
-                        var mMinusX = m - x;
-                        var mMinusXLastDigit = mMinusX % 10;
+                var x = mPlusX - m;
 
-                        if (mMinusXLastDigit == 2 || mMinusXLastDigit == 3 || mMinusXLastDigit == 7 || mMinusXLastDigit == 8)
-                        {
-                            continue;
-                        }
+                var mMinusX = m - x;
+                var mMinusXLastDigit = mMinusX % 10;
 
-                        if (Math.Sqrt(mPlusX) % 1 == 0 && Math.Sqrt(mMinusX) % 1 == 0)
-                        {
-                            newSearchSpace.Add((m, x));
-                        }
-                    }
-                }));
+                if (mMinusXLastDigit == 2 || mMinusXLastDigit == 3 || mMinusXLastDigit == 7 || mMinusXLastDigit == 8)
+                {
+                    continue;
+                }
 
-            await Task.WhenAll(searchSpaceTasks);
+                if (Math.Sqrt(mMinusX) % 1 == 0)
+                {
+                    newSearchSpace.Add((m, x));
+                }
+            };
 
             File.Delete(filePath);
             await File.AppendAllLinesAsync(filePath, newSearchSpace.Select(x => $"{x.Item1},{x.Item2}").Prepend(searchSpace.Max().ToString()));        
@@ -135,24 +122,16 @@ namespace Program
     {
         public static IEnumerable<(T, T)> GetAllPairs<T>(this IEnumerable<T> enumerable)
         {
-            if (enumerable.Count() <= 2)
-            {
-                yield return (enumerable.First(), enumerable.Last());
-            }
-            else
-            {
-                var firstItem = enumerable.FirstOrDefault();
-                var newEnumerable = enumerable.Skip(1);
+            var newEnumerable = enumerable.Skip(1);
 
+            foreach (var nextItem in enumerable)
+            {
                 foreach (var otherValue in newEnumerable)
                 {
-                    yield return (firstItem, otherValue);
+                    yield return (nextItem, otherValue);
                 }
 
-                foreach (var subcallValue in GetAllPairs(newEnumerable))
-                {
-                    yield return subcallValue;
-                }
+                newEnumerable = newEnumerable.Skip(1);
             }
         }
     }
