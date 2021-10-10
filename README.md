@@ -6,9 +6,11 @@ A program to search for a magic square of squares, informally known as a "Non-Pa
 
 We are using the following formula to search for the square:
 
+```
 m+x        m-(x+y)       m+y
 m-(x-y)    m             m+(x-y)
 m-y        m+(x+y)       m-x
+```
 
 [source](http://ken.duisenberg.com/potw/archive/arch00/000504sol.html)
 
