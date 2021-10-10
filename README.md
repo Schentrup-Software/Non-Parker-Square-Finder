@@ -1,6 +1,6 @@
 # Non-Parker Square Finder
 
-A program to search for a magic square of squares, informally known "Non-Parker Square" (http://theparkersquare.com/). This app is .NET 5 console app and can be run using Visual Studio.
+A program to search for a magic square of squares, informally known as a "Non-Parker Square" (http://theparkersquare.com/). This app is .NET 5 console app and can be run using Visual Studio.
 
 ## Methodology
 
