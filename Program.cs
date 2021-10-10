@@ -12,21 +12,21 @@ namespace Program
     {
 
         const string mfilePath = "./mfile.txt";
-        const uint totalSearchSpace = uint.MaxValue;
+        const long totalSearchSpace = long.MaxValue / 2;
 
         public static async Task Main()
         {
             var sw = new Stopwatch();
             sw.Start();
 
-            var searchSpace = new List<uint>();
+            var searchSpace = new List<long>();
 
             double lastNumber = 4;
             int counter = 3;
            
             while (lastNumber < totalSearchSpace)
             {
-                searchSpace.Add((uint)lastNumber);
+                searchSpace.Add((long)lastNumber);
                 lastNumber = Math.Pow(counter++, 2);
             }
 
@@ -35,7 +35,7 @@ namespace Program
 
             Console.WriteLine(searchSpace.Count);
 
-            var newSearchSpace = (await PullFromCache(searchSpace, totalSearchSpace))
+            var newSearchSpace = (await PullFromCache(searchSpace))
                 .GroupBy(x => x.Item1, x => x.Item2)
                 .Where(x => x.Count() > 1);
 
@@ -69,11 +69,11 @@ namespace Program
             Console.WriteLine($"None found. Time {sw.Elapsed.Minutes} min. {sw.Elapsed.Seconds} sec.");
         }
 
-        private static async Task<List<(uint, uint)>> PullFromCache(List<uint> searchSpace, uint maxM)
+        private static async Task<List<(long, long)>> PullFromCache(List<long> searchSpace)
         {
             const string filePath = "./xyfile.txt";
 
-            var newSearchSpace = new List<(uint, uint)>();
+            var newSearchSpace = new List<(long, long)>();
             var searchSpaceDictionary = searchSpace.ToDictionary(x => x);
 
             var searchSpacePairs = searchSpace
@@ -81,8 +81,8 @@ namespace Program
 
             foreach (var pair in searchSpacePairs)
             {
-                uint m;
-                uint mPlusX;
+                long m;
+                long mPlusX;
 
                 if (pair.Item1 < pair.Item2) 
                 {
