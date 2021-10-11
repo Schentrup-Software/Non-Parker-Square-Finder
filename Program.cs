@@ -12,7 +12,7 @@ namespace Program
     {
 
         const string mfilePath = "./mfile.txt";
-        const ulong totalSearchSpace = long.MaxValue / 100_000_000;
+        const ulong totalSearchSpace = long.MaxValue / 10_000_000;
 
         public static async Task Main()
         {

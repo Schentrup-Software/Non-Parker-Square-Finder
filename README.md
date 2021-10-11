@@ -37,14 +37,14 @@ The app works like this:
 
 ## Results
 
-Unfortunately, the seach came up empty. The space search was every square smaller than 92,233,720,368. The [results folder](./Results) contains 2 files. The mfile.txt is every square between 0 and 92,233,720,368. The xyfile.txt is every pair of numbers where: 
+Unfortunately, the search came up empty. The space search was every square smaller than 922,335,506,689. The [results folder](./Results) contains 2 files. The mfile.txt is every square between 0 and 922,335,506,689. The xyfile.txt is every pair of numbers where: 
 
 1. one is a square
-2. if you add and subtract the higher from the lower of them its is a square
-3. the bigger number is smaller than 92,233,720,368
+2. if you add them together or subtract the higher from the lower, the result is a square
+3. the bigger number is smaller than 922,335,506,689
 
 ## Notes for future explorers using this program
 
-This program can be run with larger numbers. It just requires you to change the `totalSearchSpace` const at the top of the program file. That number can be increased all the way up to 9,223,372,036,854,775,807 (size of C# long) with enough ram and CPU. 92,233,720,368 has 303,699 perfect squares between it and 0. `long.MaxValue` has about 10,000 times that many.
+This program can be run with larger numbers. It just requires you to change the `totalSearchSpace` const at the top of the program file. That number can be increased all the way up to 9,223,372,036,854,775,807 (size of C# long) with enough ram and CPU. 922,335,506,689 has 960,382 perfect squares between it and 0. `long.MaxValue` has about 1,000 times that many.
 
-Running the program in VS (which does not manage memory super well but should get us an order of magnitude close enough) took about 33 MB. Running the program with max size will then take up about 330 GB of RAM. This can be optimized for but is currently not implemented. Another requirement of going for the max C# has to offer will be parallelizing the for loop. This is pretty trivial but just not needed in its current implementation.
+Running the program in VS (which is not a great benchmark super well but should get us an order of magnitude close enough) took about 4.5 hours. Doing this on the full set then will require about 4500 hours (187 days) since it is not parallelized. More work will have to be done to make it parallelizable before it is reasonable to run it on the full set.
