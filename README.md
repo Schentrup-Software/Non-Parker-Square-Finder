@@ -22,23 +22,29 @@ The app works like this:
 
 1. Pick an upper limit on the search space
 1. Calculate every square between 0 and the max search space
-1. Calculate each and every pairing of squares between 0 and the upper limit of the seach space
-1. Calculate the diffrence between each pairing
+1. Calculate each and every pairing of squares between 0 and the upper limit of the search space
+1. Calculate the difference between each pairing
     1. The smaller number of the pair will be your m
     1. The larger will be m + (x or y)
-    1. The diffrence will be your (x or y)
+    1. The difference will be your (x or y)
 1. Subtract the (x or y) value from m
-1. Check the diffrence to see if it is a square
+1. Check the difference to see if it is a square
 1. If it is, save the value of m and (x or y) as a pair
 1. This creates a list of pairings of possible m and (x or y) values
-1. Then group togather all the m values
+1. Then group together all the m values
 1. Pair every combination of (x or y) values for each m
 1. Check each combination of x, y, and m to see if they work
 
 ## Results
 
-Unfortunately, the seach came up empty. The space search was every square smaller than max size of uint in C# (4,294,967,295). The [results folder](./Results) contains 2 files. The mfile.txt is every square between 0 and the max uint size. The xyfile.txt is every pair of numbers where: 
+Unfortunately, the seach came up empty. The space search was every square smaller than 92,233,720,368. The [results folder](./Results) contains 2 files. The mfile.txt is every square between 0 and 92,233,720,368. The xyfile.txt is every pair of numbers where: 
 
 1. one is a square
 2. if you add and subtract the higher from the lower of them its is a square
-3. the bigger number is smaller than uint
+3. the bigger number is smaller than 92,233,720,368
+
+## Notes for future explorers using this program
+
+This program can be run with larger numbers. It just requires you to change the `totalSearchSpace` const at the top of the program file. That number can be increased all the way up to 9,223,372,036,854,775,807 (size of C# long) with enough ram and CPU. 92,233,720,368 has 303,699 perfect squares between it and 0. `long.MaxValue` has about 10,000 times that many. 
+
+Running the program in VS (which does not manage memory super well but should get us an order of magnitude close enough) took about 33 MB. Running the program with max size will then take up about 330 GB of RAM. This can be optimized for but is currently not implemented. Another requirement of going for the max C# has to offer will be parallelizing the for loop. This is pretty trivial but just not needed in its current implementation.

@@ -12,17 +12,17 @@ namespace Program
     {
 
         const string mfilePath = "./mfile.txt";
-        const long totalSearchSpace = long.MaxValue / 2;
+        const ulong totalSearchSpace = long.MaxValue / 1_000_000_000;
 
         public static async Task Main()
         {
             var sw = new Stopwatch();
             sw.Start();
 
-            var searchSpace = new List<long>();
+            var searchSpace = new List<ulong>();
 
-            long lastNumber = 4;
-            long counter = 3;
+            ulong lastNumber = 4;
+            ulong counter = 3;
            
             while (lastNumber < totalSearchSpace)
             {
@@ -31,7 +31,7 @@ namespace Program
             }
 
             File.Delete(mfilePath);
-            await File.AppendAllLinesAsync(mfilePath, searchSpace.Prepend(totalSearchSpace).Select(x => x.ToString()));
+            await File.AppendAllLinesAsync(mfilePath, searchSpace.Select(x => x.ToString()));
 
             Console.WriteLine(searchSpace.Count);
 
@@ -45,19 +45,31 @@ namespace Program
             {
                 var pairedGroups = group.GetAllPairs();
 
-                foreach(var pairs in pairedGroups)
+                foreach (var pair in pairedGroups)
                 {
-                    long x = pairs.Item1;
-                    long y = pairs.Item2;
-                    long m = group.Key;
+                    ulong m = group.Key;
+                    ulong x;
+                    ulong y;
+
+                    if (pair.Item1 < pair.Item2)
+                    {
+                        y = pair.Item1;
+                        x = pair.Item2;
+                    }
+                    else
+                    {
+                        x = pair.Item1;
+                        y = pair.Item2;
+                    }
 
                     if (
+                        m >= (x + y) &&
                         Math.Sqrt(m + (x + y)) % 1 == 0 &&
                         Math.Sqrt(m - (x + y)) % 1 == 0 &&
                         Math.Sqrt(m + (x - y)) % 1 == 0 &&
                         Math.Sqrt(m - (x - y)) % 1 == 0)
                     {
-                        Console.WriteLine($"Found it: m = {m}, x = {x}, m = {y}");
+                        Console.WriteLine($"Found it: m = {m}, x = {x}, y = {y}");
                         return;
                     }
                 }
@@ -69,19 +81,19 @@ namespace Program
             Console.WriteLine($"None found. Time {sw.Elapsed.Minutes} min. {sw.Elapsed.Seconds} sec.");
         }
 
-        private static async Task<List<(long, long)>> PullFromCache(List<long> searchSpace)
+        private static async Task<List<(ulong, ulong)>> PullFromCache(List<ulong> searchSpace)
         {
             const string filePath = "./xyfile.txt";
 
-            var newSearchSpace = new List<(long, long)>();
+            var newSearchSpace = new List<(ulong, ulong)>();
 
             var searchSpacePairs = searchSpace
                 .GetAllPairs();
 
             foreach (var pair in searchSpacePairs)
             {
-                long m;
-                long mPlusX;
+                ulong m;
+                ulong mPlusX;
 
                 if (pair.Item1 < pair.Item2) 
                 {
@@ -95,6 +107,11 @@ namespace Program
                 }
 
                 var x = mPlusX - m;
+
+                if (x > m)
+                {
+                    continue;
+                }
 
                 var mMinusX = m - x;
                 var mMinusXLastDigit = mMinusX % 10;
