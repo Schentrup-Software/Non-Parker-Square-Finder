@@ -8,8 +8,8 @@ using System.Linq;
 using System.Threading.Tasks;
 
 
-const string mfilePath = "./mfile.txt";
-const uint totalSearchSpace = int.MaxValue / 100;
+        const string mfilePath = "./mfile.txt";
+        const ulong totalSearchSpace = long.MaxValue / 10_000_000;
 
 var sw = new Stopwatch();
 sw.Start();
