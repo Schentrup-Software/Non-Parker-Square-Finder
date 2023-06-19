@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31112.23
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33627.172
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonParkerSquareFinder", "NonParkerSquareFinder.csproj", "{17002ABD-03A8-460D-8050-53D853EA92E8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonParkerSquareFinder", "NonParkerSquareFinder.csproj", "{17002ABD-03A8-460D-8050-53D853EA92E8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.NET.Maths", "Silk.NET-main\Silk.NET-main\src\Maths\Silk.NET.Maths\Silk.NET.Maths.csproj", "{F661C89C-8D05-4B28-99B4-D2B3793E779A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{17002ABD-03A8-460D-8050-53D853EA92E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17002ABD-03A8-460D-8050-53D853EA92E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17002ABD-03A8-460D-8050-53D853EA92E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F661C89C-8D05-4B28-99B4-D2B3793E779A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F661C89C-8D05-4B28-99B4-D2B3793E779A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F661C89C-8D05-4B28-99B4-D2B3793E779A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F661C89C-8D05-4B28-99B4-D2B3793E779A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
