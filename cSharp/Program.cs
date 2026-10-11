@@ -1,84 +1,65 @@
-﻿#define SSE
-
 using NonParkerSquareFinder;
-using Silk.NET.Maths;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
-const string mfilePath = "./mfile.txt";
-const ulong totalSearchSpace = long.MaxValue / 10_000_000_000_00;
-
+const ulong totalSearchSpace = long.MaxValue;
+const int segmentSize = 1 << 20;
+const ulong smallTripleLimit = 1 << 22;
 
 var sw = new Stopwatch();
 sw.Start();
 
-var searchSpace = new List<ulong>();
+// Every m is a square, so the search runs over its root c
+var maxC = Searcher.Sqrt(totalSearchSpace);
+var segmentCount = (long)(maxC / segmentSize) + 1;
+var smallTriples = Searcher.SmallTriples(Math.Min(maxC, smallTripleLimit));
 
-ulong maxCounter = Scalar.Sqrt(totalSearchSpace);
-ulong counter = 3;
+Console.WriteLine($"Searching {maxC} squares");
 
-while (true)
+long nextSegment = -1;
+long doneSegments = 0;
+long pairCount = 0;
+long foundCount = 0;
+
+var tasks = Enumerable.Range(0, (int)Math.Min(Environment.ProcessorCount, segmentCount)).Select(_ => Task.Run(() =>
 {
-    searchSpace.Add(counter * counter++);
+    var searcher = new Searcher(smallTriples, maxC / smallTripleLimit, segmentSize);
 
-    if (maxCounter <= counter)
+    while (true)
     {
-        break;
-    }
-}
+        var segment = Interlocked.Increment(ref nextSegment);
 
-File.Delete(mfilePath);
-await File.AppendAllLinesAsync(mfilePath, searchSpace.Select(x => x.ToString()));
-
-Console.WriteLine(searchSpace.Count);
-
-var newSearchSpace = (await Cache.PullFromCache(searchSpace))
-    .GroupBy(x => x.Item1, x => x.Item2)
-    .Where(x => x.Count() > 1);
-
-Console.WriteLine(newSearchSpace.Count());
-
-var endTasks = newSearchSpace.Select(group => Task.Run(() =>
-{
-    var pairedGroups = group.GetAllPairs();
-
-    foreach(var pairs in pairedGroups)
-    {
-        var x = pairs.Item1;
-        var y = pairs.Item2;
-        var m = group.Key;
-
-        if (x + y > m)
+        if (segment >= segmentCount)
         {
-            return;
+            break;
         }
 
-        var tests = new ulong[] { (m + (x + y)), (m - (x + y)), (m + (x - y)), (m - (x - y)) };
-        var isGood = true;
+        var firstC = (ulong)segment * segmentSize;
+        var lastC = Math.Min(firstC + segmentSize - 1, maxC);
 
-        foreach (var test in tests) 
+        foreach (var (m, x, y) in searcher.Search(firstC, lastC))
         {
-            var sqrtTest = Scalar.Sqrt(test);
-            if (isGood && Scalar.Pow<ulong>(sqrtTest, 2) == test)
-            {
-                continue;
-            }
-
-            isGood = false;
-        }
-
-        if (isGood)
-        {
+            Interlocked.Increment(ref foundCount);
             Console.WriteLine($"Found it: m = {m}, x = {x}, y = {y}");
         }
+
+        var done = Interlocked.Increment(ref doneSegments);
+        var tenths = done * 10 / segmentCount;
+
+        if (segmentCount >= 10 && tenths > (done - 1) * 10 / segmentCount)
+        {
+            Console.WriteLine($"{tenths * 10}% after {(int)sw.Elapsed.TotalMinutes} min. {sw.Elapsed.Seconds} sec.");
+        }
     }
+
+    Interlocked.Add(ref pairCount, searcher.PairCount);
 }));
 
-await Task.WhenAll(endTasks);
+await Task.WhenAll(tasks);
 sw.Stop();
 
-Console.WriteLine($"None found. Time {sw.Elapsed.Minutes} min. {sw.Elapsed.Seconds} sec.");
+Console.WriteLine($"{pairCount} pairs of m and x");
+Console.WriteLine($"{(foundCount == 0 ? "None found" : $"Found {foundCount}")}. Time {(int)sw.Elapsed.TotalMinutes} min. {sw.Elapsed.Seconds} sec.");
