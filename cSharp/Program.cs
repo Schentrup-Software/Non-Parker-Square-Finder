@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-const ulong totalSearchSpace = long.MaxValue;
+// This can go up to Int128.MaxValue. Past that the sum of two x values no longer fits in a UInt128
+var totalSearchSpace = (UInt128)long.MaxValue * 100;
 const int segmentSize = 1 << 20;
-const ulong smallTripleLimit = 1 << 22;
 
 var sw = new Stopwatch();
 sw.Start();
@@ -15,6 +15,9 @@ sw.Start();
 // Every m is a square, so the search runs over its root c
 var maxC = Searcher.Sqrt(totalSearchSpace);
 var segmentCount = (long)(maxC / segmentSize) + 1;
+
+// A bigger table leaves fewer triples to generate directly. Around this size the two take about as long
+var smallTripleLimit = Math.Max(1UL << 22, (ulong)(4 * Math.Pow(maxC, 2.0 / 3)));
 var smallTriples = Searcher.SmallTriples(Math.Min(maxC, smallTripleLimit));
 
 Console.WriteLine($"Searching {maxC} squares");

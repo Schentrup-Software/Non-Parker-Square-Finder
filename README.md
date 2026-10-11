@@ -31,7 +31,7 @@ The app works like this:
 
 ## Results
 
-Unfortunately, the search came up empty. The space searched was every m up to 9,223,372,036,854,775,807 (size of C# long). That is 3,037,000,499 squares, with 9,891,133,602 pairs of m and x where m - x and m + x are both squares. None of them had a second value y that completed the square.
+Unfortunately, the search came up empty. The space searched was every m up to 922,337,203,685,477,580,700 (100 times the size of C# long). That is 30,370,004,999 squares, with 110,040,967,697 pairs of m and x where m - x and m + x are both squares. None of them had a second value y that completed the square.
 
 The [results folder](./cSharp/Results) contains 2 files from an earlier version of the search, which stopped at 922,335,506,689. The current version reproduces every pair in them but does not write files itself. The mfile.txt is every square between 0 and 922,335,506,689. The xyfile.txt is every pair of numbers where: 
 
@@ -41,8 +41,8 @@ The [results folder](./cSharp/Results) contains 2 files from an earlier version 
 
 ## Notes for future explorers using this program
 
-The size of the search is the `totalSearchSpace` const at the top of the program file. It is already set as high as it can go, 9,223,372,036,854,775,807 (size of C# long). Going further means replacing `ulong` with a bigger type such as `UInt128`, because the program adds pairs of x values together, and the sum can be nearly twice m.
+The size of the search is `totalSearchSpace` at the top of the program file. It is a `UInt128`, so it can be raised as far as `Int128.MaxValue`, which is about 1.7 x 10^38. Past that the program can no longer add two x values together, because the sum can be nearly twice m. In practice the time the search takes becomes the limit long before that.
 
-The full search takes about 36 seconds on an Intel i9-13900K using all 32 threads and about 1.5 GB of RAM. On 12 threads it takes 1 minute 14 seconds and about 600 MB. It uses every core by default. To use fewer, set the `DOTNET_PROCESSOR_COUNT` environment variable before running it.
+On an Intel i9-13900K held to 12 threads, searching up to 9,223,372,036,854,775,807 takes 1 minute 24 seconds, and the current limit of 100 times that takes 19 minutes. So raising the limit 100 times made the search take about 14 times as long. It uses every core by default. To use fewer, set the `DOTNET_PROCESSOR_COUNT` environment variable before running it.
 
-For comparison, the earlier version tested every pair of squares and took about 4.5 hours to reach 922,335,506,689, a limit ten million times smaller.
+For comparison, the earlier version tested every pair of squares and took about 4.5 hours to reach 922,335,506,689, a limit a billion times smaller.

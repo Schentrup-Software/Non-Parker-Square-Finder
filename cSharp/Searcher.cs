@@ -13,40 +13,43 @@ namespace NonParkerSquareFinder
     // large k, and the few small k left over generate the primitive triples they need directly.
     internal class Searcher
     {
-        private readonly (ulong C, ulong X)[] smallTriples;
+        private readonly (ulong C, UInt128 X)[] smallTriples;
         private readonly ulong directScales;
 
         // The x values found for each c in the segment, as linked lists running through nexts
         private readonly int[] heads;
         private int[] nexts;
-        private ulong[] xs;
+        private UInt128[] xs;
         private int count;
 
-        private ulong[] group = new ulong[16];
-        private readonly List<(ulong M, ulong X, ulong Y)> found = new();
+        private UInt128[] group = new UInt128[16];
+        private readonly List<(UInt128 M, UInt128 X, UInt128 Y)> found = new();
 
         public long PairCount { get; private set; }
 
         // smallTriples has to hold every primitive triple that still fits in the search space when
         // multiplied by more than directScales
-        public Searcher((ulong C, ulong X)[] smallTriples, ulong directScales, int segmentSize)
+        public Searcher((ulong C, UInt128 X)[] smallTriples, ulong directScales, int segmentSize)
         {
             this.smallTriples = smallTriples;
             this.directScales = directScales;
 
             heads = new int[segmentSize];
             nexts = new int[segmentSize * 4];
-            xs = new ulong[segmentSize * 4];
+            xs = new UInt128[segmentSize * 4];
         }
 
         // Every primitive triple with c up to maxC, smallest c first
-        public static (ulong C, ulong X)[] SmallTriples(ulong maxC)
+        public static (ulong C, UInt128 X)[] SmallTriples(ulong maxC)
         {
-            return PrimitiveTriples(5, maxC).OrderBy(triple => triple.C).ToArray();
+            var triples = PrimitiveTriples(5, maxC).ToArray();
+            Array.Sort(triples, (a, b) => a.C.CompareTo(b.C));
+
+            return triples;
         }
 
         // Checks every m = c * c for c from firstC to lastC, which can cover at most one segment
-        public List<(ulong M, ulong X, ulong Y)> Search(ulong firstC, ulong lastC)
+        public List<(UInt128 M, UInt128 X, UInt128 Y)> Search(ulong firstC, ulong lastC)
         {
             found.Clear();
             Fill(firstC, lastC);
@@ -59,7 +62,7 @@ namespace NonParkerSquareFinder
                 if (size >= 4)
                 {
                     Array.Sort(group, 0, size);
-                    FindSquares(c * c, group, size, found);
+                    FindSquares((UInt128)c * c, group, size, found);
                 }
             }
 
@@ -113,11 +116,11 @@ namespace NonParkerSquareFinder
             return size;
         }
 
-        internal ReadOnlySpan<ulong> Group => group;
+        internal ReadOnlySpan<UInt128> Group => group;
 
         // sortedXs holds every x where m - x and m + x are squares, so x and y complete a magic square
         // when x + y and x - y are in there too
-        internal static void FindSquares(ulong m, ulong[] sortedXs, int size, List<(ulong M, ulong X, ulong Y)> found)
+        internal static void FindSquares(UInt128 m, UInt128[] sortedXs, int size, List<(UInt128 M, UInt128 X, UInt128 Y)> found)
         {
             for (var i = 0; i < size - 1; i++)
             {
@@ -127,9 +130,10 @@ namespace NonParkerSquareFinder
                 for (var j = i + 1; j < size; j++)
                 {
                     var x = sortedXs[j];
+                    var sum = x + y;
 
-                    // x + y only grows as x does, so the place to look for it never moves backwards
-                    while (sumIndex < size && sortedXs[sumIndex] < x + y)
+                    // The sum only grows as x does, so the place to look for it never moves backwards
+                    while (sumIndex < size && sortedXs[sumIndex] < sum)
                     {
                         sumIndex++;
                     }
@@ -139,7 +143,7 @@ namespace NonParkerSquareFinder
                         break;
                     }
 
-                    if (sortedXs[sumIndex] == x + y && Array.BinarySearch(sortedXs, 0, j, x - y) >= 0)
+                    if (sortedXs[sumIndex] == sum && Array.BinarySearch(sortedXs, 0, j, x - y) >= 0)
                     {
                         found.Add((m, x, y));
                     }
@@ -148,7 +152,7 @@ namespace NonParkerSquareFinder
         }
 
         // Every primitive triple with c from minC to maxC, as c and its x
-        internal static IEnumerable<(ulong C, ulong X)> PrimitiveTriples(ulong minC, ulong maxC)
+        internal static IEnumerable<(ulong C, UInt128 X)> PrimitiveTriples(ulong minC, ulong maxC)
         {
             for (var p = Math.Max(2, Sqrt(minC / 2)); p * p < maxC; p++)
             {
@@ -168,17 +172,34 @@ namespace NonParkerSquareFinder
                     {
                         var qq = q * q;
 
-                        yield return (pp + qq, 2 * (pp - qq) * (2 * p * q));
+                        yield return (pp + qq, 2 * (UInt128)(pp - qq) * (2 * p * q));
                     }
                 }
             }
         }
 
-        public static ulong Sqrt(ulong n)
+        public static ulong Sqrt(UInt128 n)
+        {
+            var root = (ulong)Math.Sqrt((double)n);
+
+            // Math.Sqrt works on a double, which can't hold a large n exactly
+            while ((UInt128)root * root > n)
+            {
+                root--;
+            }
+
+            while ((UInt128)(root + 1) * (root + 1) <= n)
+            {
+                root++;
+            }
+
+            return root;
+        }
+
+        private static ulong Sqrt(ulong n)
         {
             var root = (ulong)Math.Sqrt(n);
 
-            // Math.Sqrt works on a double, which can't hold a large n exactly
             while (root * root > n)
             {
                 root--;
@@ -209,7 +230,7 @@ namespace NonParkerSquareFinder
             return a;
         }
 
-        private void Add(ulong offset, ulong x)
+        private void Add(ulong offset, UInt128 x)
         {
             if (count == xs.Length)
             {
