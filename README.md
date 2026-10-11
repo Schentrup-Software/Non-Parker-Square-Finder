@@ -1,6 +1,6 @@
 # Non-Parker Square Finder
 
-A program to search for a magic square of squares, informally known as a "Non-Parker Square" (http://theparkersquare.com/). This app is a .NET 8 console app. Run it with `dotnet run -c Release` from the [cSharp folder](./cSharp), or from Visual Studio.
+A program to search for a magic square of squares, informally known as a "Non-Parker Square" (http://theparkersquare.com/). There are two versions, both .NET 8 console apps. [cSharpSieve](./cSharpSieve) is the faster one, and [cSharpSimple](./cSharpSimple) is shorter and easier to follow. Run either with `dotnet run -c Release` from its folder, or from Visual Studio.
 
 ## Methodology
 
@@ -29,11 +29,16 @@ The app works like this:
 1. In a magic square of squares, x, y, x + y and x - y all have to be in that list for the same m
 1. So for each m, check every pair in its list to see if their sum and their difference are in the list too
 
+The two versions only differ in how they find the triples for a block of c values:
+
+- The simple version keeps a table of small triples and goes through it for every block to see which multiples of them land in the block. The table has to grow with the search limit, and most of it misses any one block, so this gets slower the further the search goes.
+- The sieve version works out the prime factors of every c in the block with a sieve. A c only has triples if some of its prime factors are 1 more than a multiple of 4. Each of those primes is a sum of two squares in exactly one way, and the triples for c are built by multiplying those pieces together. It also skips any c with fewer than four x values, since those can't make a square.
+
 ## Results
 
-Unfortunately, the search came up empty. The space searched was every m up to 922,337,203,685,477,580,700 (100 times the size of C# long). That is 30,370,004,999 squares, with 110,040,967,697 pairs of m and x where m - x and m + x are both squares. None of them had a second value y that completed the square.
+Unfortunately, the search came up empty. The space searched was every m up to 922,337,203,685,477,580,700 (100 times the size of C# long). That is 30,370,004,999 squares, with 110,040,967,697 pairs of m and x where m - x and m + x are both squares. None of them had a second value y that completed the square. Both versions were run over the whole space and agree on those counts.
 
-The [results folder](./cSharp/Results) contains 2 files from an earlier version of the search, which stopped at 922,335,506,689. The current version reproduces every pair in them but does not write files itself. The mfile.txt is every square between 0 and 922,335,506,689. The xyfile.txt is every pair of numbers where: 
+The [results folder](./cSharpSimple/Results) contains 2 files from an earlier version of the search, which stopped at 922,335,506,689. Both current versions reproduce every pair in them but do not write files themselves. The mfile.txt is every square between 0 and 922,335,506,689. The xyfile.txt is every pair of numbers where: 
 
 1. one is a square
 2. if you add them together or subtract the higher from the lower, the result is a square
@@ -41,8 +46,15 @@ The [results folder](./cSharp/Results) contains 2 files from an earlier version 
 
 ## Notes for future explorers using this program
 
-The size of the search is `totalSearchSpace` at the top of the program file. It is a `UInt128`, so it can be raised as far as `Int128.MaxValue`, which is about 1.7 x 10^38. Past that the program can no longer add two x values together, because the sum can be nearly twice m. In practice the time the search takes becomes the limit long before that.
+The size of the search is `totalSearchSpace` at the top of each program file. It is a `UInt128`. The simple version can be raised as far as `Int128.MaxValue`, about 1.7 x 10^38, and the sieve version as far as `long.MaxValue` squared, about 8.5 x 10^37. In practice the time the search takes becomes the limit long before either.
 
-On an Intel i9-13900K held to 12 threads, searching up to 9,223,372,036,854,775,807 takes 1 minute 24 seconds, and the current limit of 100 times that takes 19 minutes. So raising the limit 100 times made the search take about 14 times as long. It uses every core by default. To use fewer, set the `DOTNET_PROCESSOR_COUNT` environment variable before running it.
+These are the times on an Intel i9-13900K held to 12 threads:
+
+| Search limit on m | Simple | Sieve |
+|---|---|---|
+| 9,223,372,036,854,775,807 | 1 min 24 sec | 57 sec |
+| 100 times that (the current limit) | 19 min 3 sec | 12 min 30 sec |
+
+The gap widens as the limit goes up. On a sample of blocks near a limit 10,000 times higher again, the sieve version was about 3.7 times faster. Both use every core by default. To use fewer, set the `DOTNET_PROCESSOR_COUNT` environment variable before running.
 
 For comparison, the earlier version tested every pair of squares and took about 4.5 hours to reach 922,335,506,689, a limit a billion times smaller.
