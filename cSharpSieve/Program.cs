@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 // This can go up to long.MaxValue squared. Past that c no longer fits in a long
-var totalSearchSpace = (UInt128)long.MaxValue * 100;
+var totalSearchSpace = (UInt128)long.MaxValue * 10_000;
 const int segmentSize = 1 << 18;
 
 var sw = new Stopwatch();
