@@ -14,6 +14,8 @@ namespace NonParkerSquareFinder
     // with a sieve, and the x values of a c are multiplied together from its factors.
     internal class Searcher
     {
+        private const int BatchSize = 1 << 22;
+
         // Every odd prime up to the square root of the largest c. A and B are 0 unless P = A * A + B * B
         private readonly (ulong P, long A, long B)[] primes;
 
@@ -39,11 +41,33 @@ namespace NonParkerSquareFinder
         private UInt128[] group = new UInt128[16];
         private readonly List<(UInt128 M, UInt128 X, UInt128 Y)> found = new();
 
+        // Null when there is no graphics card, which leaves the whole pair check to FindSquares
+        private readonly GpuChecker gpu;
+
+        // The x values waiting to go to the graphics card, as one group of keys for each c
+        private ulong[] batchKeys;
+        private int[] batchGroupStarts;
+        private ulong[] batchCs;
+        private int batchKeyCount;
+        private int batchGroupCount;
+
+        private Searcher fullChecker;
+
         public long PairCount { get; private set; }
 
-        public Searcher((ulong P, long A, long B)[] primes, int segmentSize)
+        internal long RecheckCount { get; private set; }
+
+        public Searcher((ulong P, long A, long B)[] primes, int segmentSize, GpuChecker gpu)
         {
             this.primes = primes;
+            this.gpu = gpu;
+
+            if (gpu != null)
+            {
+                batchKeys = new ulong[BatchSize * 2];
+                batchGroupStarts = new int[BatchSize / 2];
+                batchCs = new ulong[BatchSize / 2];
+            }
 
             products = new ulong[segmentSize];
             heads = new int[segmentSize];
@@ -91,12 +115,34 @@ namespace NonParkerSquareFinder
                 if (size >= 4)
                 {
                     Build(c, size);
-                    Array.Sort(group, 0, size);
-                    FindSquares((UInt128)c * c, group, size, found);
+
+                    if (gpu == null)
+                    {
+                        Array.Sort(group, 0, size);
+                        FindSquares((UInt128)c * c, group, size, found);
+                    }
+                    else
+                    {
+                        AddToBatch(c, size);
+                    }
                 }
 
                 PairCount += size;
             }
+
+            if (batchKeyCount >= BatchSize)
+            {
+                CheckBatch();
+            }
+
+            return found;
+        }
+
+        // Checks whatever is still waiting for the graphics card after the last segment
+        public List<(UInt128 M, UInt128 X, UInt128 Y)> Finish()
+        {
+            found.Clear();
+            CheckBatch();
 
             return found;
         }
@@ -321,6 +367,50 @@ namespace NonParkerSquareFinder
         private static (long Re, long Im) Multiply((long Re, long Im) a, (long Re, long Im) b)
         {
             return (a.Re * b.Re - a.Im * b.Im, a.Re * b.Im + a.Im * b.Re);
+        }
+
+        private void AddToBatch(ulong c, int size)
+        {
+            if (batchKeyCount + size > batchKeys.Length)
+            {
+                Array.Resize(ref batchKeys, (batchKeyCount + size) * 2);
+            }
+
+            // One more start is kept free to mark where the last group ends
+            if (batchGroupCount + 1 == batchGroupStarts.Length)
+            {
+                Array.Resize(ref batchGroupStarts, batchGroupCount * 2);
+                Array.Resize(ref batchCs, batchGroupCount * 2);
+            }
+
+            batchCs[batchGroupCount] = c;
+            batchGroupStarts[batchGroupCount++] = batchKeyCount;
+
+            for (var i = 0; i < size; i++)
+            {
+                batchKeys[batchKeyCount++] = (ulong)(group[i] >> gpu.Shift);
+            }
+        }
+
+        // Sends the waiting keys to the graphics card and gives each c it picks out the full check
+        private void CheckBatch()
+        {
+            if (batchGroupCount == 0)
+            {
+                return;
+            }
+
+            batchGroupStarts[batchGroupCount] = batchKeyCount;
+
+            foreach (var index in gpu.Check(batchKeys, batchKeyCount, batchGroupStarts, batchGroupCount))
+            {
+                fullChecker ??= new Searcher(primes, 1, null);
+                found.AddRange(fullChecker.Search(batchCs[index], batchCs[index]));
+                RecheckCount++;
+            }
+
+            batchKeyCount = 0;
+            batchGroupCount = 0;
         }
 
         private void Add(int offset, int prime)

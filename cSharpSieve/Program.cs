@@ -1,5 +1,6 @@
 using NonParkerSquareFinder;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -17,7 +18,10 @@ var maxC = Searcher.Sqrt(totalSearchSpace);
 var segmentCount = (long)(maxC / segmentSize) + 1;
 var primes = Searcher.Primes(maxC);
 
+using var gpu = GpuChecker.Create(totalSearchSpace);
+
 Console.WriteLine($"Searching {maxC} squares");
+Console.WriteLine(gpu == null ? "No NVIDIA graphics card found, so the CPU checks the pairs" : $"Checking pairs on {gpu.Name}");
 
 long nextSegment = -1;
 long doneSegments = 0;
@@ -26,7 +30,7 @@ long foundCount = 0;
 
 var tasks = Enumerable.Range(0, (int)Math.Min(Environment.ProcessorCount, segmentCount)).Select(_ => Task.Run(() =>
 {
-    var searcher = new Searcher(primes, segmentSize);
+    var searcher = new Searcher(primes, segmentSize, gpu);
 
     while (true)
     {
@@ -40,11 +44,7 @@ var tasks = Enumerable.Range(0, (int)Math.Min(Environment.ProcessorCount, segmen
         var firstC = (ulong)segment * segmentSize;
         var lastC = Math.Min(firstC + segmentSize - 1, maxC);
 
-        foreach (var (m, x, y) in searcher.Search(firstC, lastC))
-        {
-            Interlocked.Increment(ref foundCount);
-            Console.WriteLine($"Found it: m = {m}, x = {x}, y = {y}");
-        }
+        Report(searcher.Search(firstC, lastC));
 
         var done = Interlocked.Increment(ref doneSegments);
         var tenths = done * 10 / segmentCount;
@@ -55,6 +55,7 @@ var tasks = Enumerable.Range(0, (int)Math.Min(Environment.ProcessorCount, segmen
         }
     }
 
+    Report(searcher.Finish());
     Interlocked.Add(ref pairCount, searcher.PairCount);
 }));
 
@@ -63,3 +64,12 @@ sw.Stop();
 
 Console.WriteLine($"{pairCount} pairs of m and x");
 Console.WriteLine($"{(foundCount == 0 ? "None found" : $"Found {foundCount}")}. Time {(int)sw.Elapsed.TotalMinutes} min. {sw.Elapsed.Seconds} sec.");
+
+void Report(List<(UInt128 M, UInt128 X, UInt128 Y)> squares)
+{
+    foreach (var (m, x, y) in squares)
+    {
+        Interlocked.Increment(ref foundCount);
+        Console.WriteLine($"Found it: m = {m}, x = {x}, y = {y}");
+    }
+}
