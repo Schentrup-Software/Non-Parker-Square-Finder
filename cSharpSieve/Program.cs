@@ -18,10 +18,15 @@ var maxC = Searcher.Sqrt(totalSearchSpace);
 var segmentCount = (long)(maxC / segmentSize) + 1;
 var primes = Searcher.Primes(maxC);
 
-using var gpu = GpuChecker.Create(totalSearchSpace);
+using var card = GpuChecker.Create(totalSearchSpace, primes);
+
+// A card that gets different answers from the CPU is left out
+var gpu = card != null && Searcher.CardAgrees(primes, card, maxC) ? card : null;
 
 Console.WriteLine($"Searching {maxC} squares");
-Console.WriteLine(gpu == null ? "No NVIDIA graphics card found, so the CPU checks the pairs" : $"Checking pairs on {gpu.Name}");
+Console.WriteLine(card == null ? "No NVIDIA graphics card found, so the CPU does everything"
+    : gpu == null ? $"{card.Name} did not give the same x values as the CPU, so the CPU does everything"
+    : $"Working out and checking the x values on {gpu.Name}");
 
 long nextSegment = -1;
 long doneSegments = 0;

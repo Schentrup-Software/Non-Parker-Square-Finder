@@ -34,7 +34,13 @@ The two versions only differ in how they find the triples for a block of c value
 - The simple version keeps a table of small triples and goes through it for every block to see which multiples of them land in the block. The table has to grow with the search limit, and most of it misses any one block, so this gets slower the further the search goes.
 - The sieve version works out the prime factors of every c in the block with a sieve. A c only has triples if some of its prime factors are 1 more than a multiple of 4. Each of those primes is a sum of two squares in exactly one way, and the triples for c are built by multiplying those pieces together. It also skips any c with fewer than four x values, since those can't make a square.
 
-The sieve version also hands the pair checking to an NVIDIA graphics card when the machine has one. It talks to the card through the ILGPU package, which the build downloads, and the card needs nothing installed beyond its normal driver. It gets the x values cut down to 64 bits and looks for any m where the sum of two of them is another one, or one more than another one to allow for the bits that were cut off. That can pick out an m that does not really work, but it can't miss one that does, and anything it picks out gets the full check on the CPU. Without a card the CPU does all of it.
+The sieve version also hands most of the work to an NVIDIA graphics card when the machine has one. It talks to the card through the ILGPU package, which the build downloads, and the card needs nothing installed beyond its normal driver. The CPU still runs the sieve and gathers the factors of each c. The card then does three things:
+
+- It splits the one prime factor too large for the sieve into its two squares.
+- It multiplies out the x values for each m, keeping each one cut down to 64 bits.
+- It looks for any m where the sum of two of those is another one, or one more than another one to allow for the bits that were cut off.
+
+That last step can pick out an m that does not really work, but it can't miss one that does, and anything it picks out gets the full check on the CPU. When the program starts, it has the card work out the x values for the largest numbers in the search and compares them with the CPU's. If they differ, or there is no card, the CPU does all of it.
 
 ## Results
 
@@ -54,11 +60,11 @@ These are the times on an Intel i9-13900K held to 12 threads, with and without a
 
 | Search limit on m | Simple | Sieve, CPU only | Sieve with the card |
 |---|---|---|---|
-| 9,223,372,036,854,775,807 | 1 min 24 sec | 57 sec | 26 sec |
-| 100 times that (the current limit) | 19 min 3 sec | 12 min 30 sec | 5 min 0 sec |
+| 9,223,372,036,854,775,807 | 1 min 24 sec | 57 sec | 9 sec |
+| 100 times that (the current limit) | 19 min 3 sec | 12 min 30 sec | 1 min 48 sec |
 
 The gap between simple and sieve widens as the limit goes up. On a sample of blocks near a limit 10,000 times higher again, the sieve version without the card was about 3.7 times faster.
 
-With the card, the CPU's share of the work is what sets the speed. The card was only about 40% busy during these runs, so more CPU threads should make it faster still. Both versions use every core by default. To use fewer, set the `DOTNET_PROCESSOR_COUNT` environment variable before running.
+With the card, the CPU and the card are close to balanced. The card was about 70% busy during these runs, so more CPU threads should make it a little faster before the card becomes the limit. Both versions use every core by default. To use fewer, set the `DOTNET_PROCESSOR_COUNT` environment variable before running.
 
 For comparison, the earlier version tested every pair of squares and took about 4.5 hours to reach 922,335,506,689, a limit a billion times smaller.
